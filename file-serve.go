@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/handlers"
 )
 
 type FileSystem interface {
@@ -12,12 +14,13 @@ type FileSystem interface {
 }
 
 func main() {
+	r := http.NewServeMux()
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	port := ":" + "9000"
+	port := ":" + "8000"
 
 	if len(os.Args) > 1 {
 		port = ":" + os.Args[1]
@@ -26,6 +29,7 @@ func main() {
 	var fs FileSystem = http.Dir(cwd)
 
 	serve := http.FileServer(fs)
+	r.Handle("/", handlers.LoggingHandler(os.Stdout, serve))
 
-	log.Fatal(http.ListenAndServe(port, serve))
+	log.Fatal(http.ListenAndServe(port, handlers.CompressHandler(r)))
 }
